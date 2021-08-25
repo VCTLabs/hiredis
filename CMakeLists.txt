@@ -1,10 +1,11 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.4.0)
-INCLUDE(GNUInstallDirs)
 PROJECT(hiredis C)
 
 OPTION(ENABLE_SSL "Build hiredis_ssl for SSL support" OFF)
 OPTION(DISABLE_TESTS "If tests should be compiled or not" OFF)
 OPTION(ENABLE_SSL_TESTS, "Should we test SSL connections" OFF)
+
+INCLUDE(GNUInstallDirs)
 
 MACRO(getVersionBit name)
   SET(VERSION_REGEX "^#define ${name} (.+)$")

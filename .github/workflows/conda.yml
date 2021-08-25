@@ -6,6 +6,8 @@ on:
   push:
     branches:
       - master
+      - staging
+      - release/**
     paths-ignore:
       - '**.md'
       - '**.rst'
@@ -13,50 +15,53 @@ on:
 
 jobs:
   build:
+    name: hiredis ${{ matrix.python-version }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-2016, macos-latest]
-
-    runs-on: ${{ matrix.platform }}
-
-    # The setup-miniconda action needs this to activate miniconda
-    defaults:
-      run:
-        shell: "bash -l {0}"
-    env:
-      OS: ${{ matrix.platform }}
-      PYTHONIOENCODING: utf-8
+        os: ['ubuntu-latest', 'macos-latest', 'windows-2016', 'windows-2019']
+        python-version: ['3.7']
+        include:
+          - os: 'ubuntu-latest'
+            generator: 'Ninja'
+            build_type: 'RelWithDebInfo'
+          - os: 'macos-latest'
+            generator: 'Ninja'
+            build_type: 'RelWithDebInfo'
+          - os: 'windows-2016'
+            generator: 'Visual Studio 15 2017 Win64'
+            build_type: 'Release'
+          - os: 'windows-2019'
+            generator: 'Visual Studio 16 2019'
+            build_type: 'Release'
 
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+    - uses: actions/checkout@v2
 
-      - name: Cache conda
-        uses: actions/cache@v1
-        with:
-          path: ~/conda_pkgs_dir
-          key: ${{matrix.os}}-conda-pkgs-${{hashFiles('**/conda/meta.yaml')}}
+    - name: setup miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        python-version: ${{ matrix.python-version }}
+        channels: conda-forge
+        channel-priority: strict
 
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
-        if: runner.os == 'Windows'
+    - name: install prerequisites
+      shell: pwsh
+      run: conda install cmake ninja c-compiler openssl redis
 
-      - name: Get conda
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          python-version: 3.7
-          channels: conda-forge
-          channel-priority: strict
-          use-only-tar-bz2: true
-          auto-activate-base: true
-
-      - name: Prepare
-        run: conda install conda-build conda-verify
-
-      - name: Build and test
-        run: conda build conda/
-
-      - name: Install
-        run: conda install -c ${CONDA_PREFIX}/conda-bld/ libhiredis
+    - name: print info
+      shell: pwsh
+      run: |
+        conda info
+        conda list
+    - name: build and test
+      shell: pwsh
+      run: >
+        ctest
+        --build-config "${{ matrix.build_type }}"
+        --build-generator "${{ matrix.generator }}"
+        --build-and-test . build
+        --build-options -DENABLE_SSL=OFF
+        --test-command ctest -V --build-config "${{ matrix.build_type }}"
