@@ -48,8 +48,7 @@ IF(WIN32)
 ENDIF()
 
 IF(MSVC)
-  target_compile_options(hiredis PRIVATE /utf-8)
-  target_compile_options(hiredis_static PRIVATE /utf-8)
+  add_compile_options(/utf-8)
 ENDIF()
 
 ADD_LIBRARY(hiredis SHARED ${hiredis_sources})
