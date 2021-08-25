@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest]
+        platform: [ubuntu-latest, windows-2016, macos-latest]
 
     runs-on: ${{ matrix.platform }}
 
@@ -24,6 +24,9 @@ jobs:
     defaults:
       run:
         shell: "bash -l {0}"
+    env:
+      OS: ${{ matrix.platform }}
+      PYTHONIOENCODING: utf-8
 
     steps:
       - uses: actions/checkout@v2
@@ -36,10 +39,14 @@ jobs:
           path: ~/conda_pkgs_dir
           key: ${{matrix.os}}-conda-pkgs-${{hashFiles('**/conda/meta.yaml')}}
 
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.2
+        if: runner.os == 'Windows'
+
       - name: Get conda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: 3.9
+          python-version: 3.7
           channels: conda-forge
           channel-priority: strict
           use-only-tar-bz2: true

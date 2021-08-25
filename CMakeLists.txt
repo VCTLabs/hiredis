@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.4.0)
 INCLUDE(GNUInstallDirs)
-PROJECT(hiredis)
+PROJECT(hiredis C)
 
 OPTION(ENABLE_SSL "Build hiredis_ssl for SSL support" OFF)
 OPTION(DISABLE_TESTS "If tests should be compiled or not" OFF)
@@ -42,7 +42,13 @@ SET(hiredis_sources
 SET(hiredis_sources ${hiredis_sources})
 
 IF(WIN32)
-    ADD_COMPILE_DEFINITIONS(_CRT_SECURE_NO_WARNINGS WIN32_LEAN_AND_MEAN)
+  add_definitions(-DUNICODE -D_UNICODE -DSTRICT -DNOMINMAX)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
+ENDIF()
+
+IF(MSVC)
+  target_compile_options(hiredis PRIVATE /utf-8)
+  target_compile_options(hiredis_static PRIVATE /utf-8)
 ENDIF()
 
 ADD_LIBRARY(hiredis SHARED ${hiredis_sources})
