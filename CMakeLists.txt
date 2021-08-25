@@ -230,8 +230,13 @@ IF(NOT DISABLE_TESTS)
     ELSE()
         TARGET_LINK_LIBRARIES(hiredis-test hiredis)
     ENDIF()
-    ADD_TEST(NAME hiredis-test
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test.sh)
+    IF(MSVC)
+      ADD_TEST(NAME hiredis-test
+          COMMAND ${CMAKE_CURRENT_BINARY_DIR}/hiredis-test.exe)
+    ELSE()
+      ADD_TEST(NAME hiredis-test
+          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test.sh)
+    ENDIF()
 ENDIF()
 
 # Add examples

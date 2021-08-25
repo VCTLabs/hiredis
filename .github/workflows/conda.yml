@@ -64,4 +64,6 @@ jobs:
         --build-generator "${{ matrix.generator }}"
         --build-and-test . build
         --build-options -DENABLE_SSL=OFF
+        -DOPENSSL_ROOT_DIR=$env:CONDA_PREFIX
+        -DCMAKE_INSTALL_PREFIX:PATH=$env:CONDA_PREFIX
         --test-command ctest -V --build-config "${{ matrix.build_type }}"
