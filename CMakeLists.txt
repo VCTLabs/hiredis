@@ -43,8 +43,8 @@ SET(hiredis_sources
 SET(hiredis_sources ${hiredis_sources})
 
 IF(WIN32)
-  add_definitions(-DUNICODE -D_UNICODE -DSTRICT -DNOMINMAX)
-  add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
+  add_compile_definitions(_CRT_SECURE_NO_WARNINGS _SCL_SECURE_NO_WARNINGS)
+  add_compile_definitions(WIN32_LEAN_AND_MEAN UNICODE _UNICODE STRICT NOMINMAX)
 ENDIF()
 
 IF(MSVC)
