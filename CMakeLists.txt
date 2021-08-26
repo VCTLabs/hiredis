@@ -1,10 +1,11 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.4.0)
-INCLUDE(GNUInstallDirs)
-PROJECT(hiredis)
+PROJECT(hiredis C)
 
 OPTION(ENABLE_SSL "Build hiredis_ssl for SSL support" OFF)
 OPTION(DISABLE_TESTS "If tests should be compiled or not" OFF)
 OPTION(ENABLE_SSL_TESTS, "Should we test SSL connections" OFF)
+
+INCLUDE(GNUInstallDirs)
 
 MACRO(getVersionBit name)
   SET(VERSION_REGEX "^#define ${name} (.+)$")
@@ -42,7 +43,12 @@ SET(hiredis_sources
 SET(hiredis_sources ${hiredis_sources})
 
 IF(WIN32)
-    ADD_COMPILE_DEFINITIONS(_CRT_SECURE_NO_WARNINGS WIN32_LEAN_AND_MEAN)
+    ADD_COMPILE_DEFINITIONS(_CRT_SECURE_NO_WARNINGS _SCL_SECURE_NO_WARNINGS)
+    ADD_COMPILE_DEFINITIONS(WIN32_LEAN_AND_MEAN UNICODE _UNICODE STRICT NOMINMAX)
+ENDIF()
+
+IF(MSVC)
+    ADD_COMPILE_OPTIONS(/utf-8)
 ENDIF()
 
 ADD_LIBRARY(hiredis SHARED ${hiredis_sources})
@@ -224,11 +230,16 @@ IF(NOT DISABLE_TESTS)
     ELSE()
         TARGET_LINK_LIBRARIES(hiredis-test hiredis)
     ENDIF()
-    ADD_TEST(NAME hiredis-test
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test.sh)
+    IF(MSVC)
+      ADD_TEST(NAME hiredis-test
+          COMMAND ${CMAKE_CURRENT_BINARY_DIR}/hiredis-test.exe)
+    ELSE()
+      ADD_TEST(NAME hiredis-test
+          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test.sh)
+    ENDIF()
 ENDIF()
 
 # Add examples
 IF(ENABLE_EXAMPLES)
-  ADD_SUBDIRECTORY(examples)
+    ADD_SUBDIRECTORY(examples)
 ENDIF(ENABLE_EXAMPLES)

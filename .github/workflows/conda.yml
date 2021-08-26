@@ -1,0 +1,76 @@
+name: Conda
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - master
+      - staging
+      - release/**
+    paths-ignore:
+      - '**.md'
+      - '**.rst'
+      - '**.sh'
+
+jobs:
+  build:
+    name: hiredis ${{ matrix.python-version }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest', 'windows-2016', 'windows-2019']
+        python-version: ['3.7']
+        include:
+          - os: 'ubuntu-latest'
+            generator: 'Ninja'
+            build_type: 'RelWithDebInfo'
+          - os: 'macos-latest'
+            generator: 'Ninja'
+            build_type: 'RelWithDebInfo'
+          - os: 'windows-2016'
+            generator: 'Visual Studio 15 2017 Win64'
+            build_type: 'Release'
+          - os: 'windows-2019'
+            generator: 'Visual Studio 16 2019'
+            build_type: 'Release'
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: prep source (disable/patch network tests)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        git config --global user.name 'github-bot'
+        git config --global user.email 'github-bot@users.noreply.github.com'
+        git apply --whitespace=fix '.github/patch-network-tests.patch'
+
+    - name: setup miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        python-version: ${{ matrix.python-version }}
+        channels: conda-forge
+        channel-priority: strict
+
+    - name: install prerequisites
+      shell: pwsh
+      run: conda install cmake ninja c-compiler openssl redis
+
+    - name: print info
+      shell: pwsh
+      run: |
+        conda info
+        conda list
+    - name: build and test
+      shell: pwsh
+      run: >
+        ctest
+        --build-config "${{ matrix.build_type }}"
+        --build-generator "${{ matrix.generator }}"
+        --build-and-test . build
+        --build-options -DENABLE_SSL=OFF
+        -DCMAKE_INSTALL_PREFIX:PATH=$env:CONDA_PREFIX
+        --test-command ctest -V --build-config "${{ matrix.build_type }}"
